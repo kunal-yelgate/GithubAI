@@ -1,11 +1,16 @@
 from app.services.github_api import (
     get_repository,
     get_repository_languages,
-    get_repository_commits
+    get_repository_commits,
+    get_repository_tree
 )
 
 from app.analyzers.language_analyzer import (
     analyze_languages
+)
+
+from app.analyzers.structure_analyzer import (
+    analyze_structure
 )
 
 
@@ -40,6 +45,15 @@ async def analyze_repository(
         repo
     )
 
+    tree = await get_repository_tree(
+        access_token,
+        owner,
+        repo,
+        repository["default_branch"]
+    )
+
+    structure_analysis = analyze_structure(tree)
+
     return {
         "repository": {
             "name": repository["name"],
@@ -52,6 +66,8 @@ async def analyze_repository(
         },
 
         "languages": language_analysis,
+
+        "structure": structure_analysis,
 
         "commits": {
             "fetched": len(commits)
