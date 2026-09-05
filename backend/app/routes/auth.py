@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
+from app.session import create_session
 
 from app.services.github_oauth import (
     get_github_login_url,
@@ -29,26 +30,28 @@ async def github_login():
 @router.get("/github/callback")
 async def github_callback(code: str):
 
-    # 1. Exchange OAuth code for access token
     token_data = await exchange_code_for_token(code)
 
     if "access_token" not in token_data:
-
         raise HTTPException(
             status_code=400,
-            detail="Failed to authenticate with GitHub"
+            detail="GitHub authentication failed"
         )
 
     access_token = token_data["access_token"]
 
-    # 2. Get GitHub user
-    user = await get_github_user(access_token)
+    session = create_session(access_token)
 
-    # 3. Get repositories
-    repositories = await get_user_repositories(access_token)
+    response = RedirectResponse(
+        url="http://localhost:5173/dashboard"
+    )
 
-    return {
-        "message": "GitHub authentication successful",
-        "user": user,
-        "repositories": repositories
-    }
+    response.set_cookie(
+        key="session",
+        value=session,
+        httponly=True,
+        secure=False,  # True in production HTTPS
+        samesite="lax"
+    )
+
+    return response
