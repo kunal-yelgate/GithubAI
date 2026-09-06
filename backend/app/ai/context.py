@@ -8,7 +8,13 @@ Answer only from the supplied GitHub context. Never invent files, metrics, techn
 When citing evidence, use repository-relative file paths in backticks. Explain uncertainty when context is incomplete.
 For statistics and profile questions, calculate from the supplied structured data.
 For code questions, distinguish static-analysis findings from direct source excerpts.
-Keep answers useful and concise, with short headings or bullets when appropriate."""
+Keep answers useful and concise, with short headings or bullets when appropriate.
+Format every answer for a human reader:
+1. Start with a direct answer in one or two sentences.
+2. Use short Markdown headings beginning with ### when sections are useful.
+3. Use simple bullet points for evidence and file paths in backticks.
+4. End with a brief limitation statement only when the supplied context is incomplete.
+Do not return JSON, XML, provider metadata, or internal reasoning."""
 
 MAX_CONTEXT_CHARS = 18000
 

@@ -1,6 +1,70 @@
 import { useState } from "react";
 import { askAI } from "../services/api";
 
+function renderInline(text) {
+  return text
+    .split(/(`[^`]+`)/g)
+    .map((part, index) =>
+      part.startsWith("`") && part.endsWith("`") ? (
+        <code key={`${part}-${index}`}>{part.slice(1, -1)}</code>
+      ) : (
+        <span key={`${part}-${index}`}>{part}</span>
+      ),
+    );
+}
+
+function AnswerContent({ answer }) {
+  const lines = answer.replace(/<\|[^>]+\|>/g, "").split("\n");
+  const blocks = [];
+  let codeLines = [];
+  let inCodeBlock = false;
+
+  lines.forEach((line, index) => {
+    if (line.trim().startsWith("```")) {
+      if (inCodeBlock) {
+        blocks.push(
+          <pre key={`code-${index}`}>
+            <code>{codeLines.join("\n")}</code>
+          </pre>,
+        );
+        codeLines = [];
+      }
+      inCodeBlock = !inCodeBlock;
+      return;
+    }
+    if (inCodeBlock) {
+      codeLines.push(line);
+      return;
+    }
+
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    if (trimmed.startsWith("### ") || trimmed.startsWith("## ")) {
+      blocks.push(
+        <h3 key={`heading-${index}`}>
+          {renderInline(trimmed.replace(/^#+\s+/, ""))}
+        </h3>,
+      );
+    } else if (/^[-*]\s+/.test(trimmed)) {
+      blocks.push(
+        <li key={`bullet-${index}`}>
+          {renderInline(trimmed.replace(/^[-*]\s+/, ""))}
+        </li>,
+      );
+    } else if (/^\d+[.)]\s+/.test(trimmed)) {
+      blocks.push(
+        <li className="numbered-item" key={`number-${index}`}>
+          {renderInline(trimmed.replace(/^\d+[.)]\s+/, ""))}
+        </li>,
+      );
+    } else {
+      blocks.push(<p key={`paragraph-${index}`}>{renderInline(trimmed)}</p>);
+    }
+  });
+
+  return <div className="answer-content">{blocks}</div>;
+}
+
 function ChatBox({ owner, repo, title = "Ask Atlas" }) {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -79,7 +143,7 @@ function ChatBox({ owner, repo, title = "Ask Atlas" }) {
       {answer && (
         <div className="chat-answer">
           <span className="eyebrow">{provider} response</span>
-          <p>{answer}</p>
+          <AnswerContent answer={answer} />
         </div>
       )}
       {error && <div className="notice error">{error}</div>}
