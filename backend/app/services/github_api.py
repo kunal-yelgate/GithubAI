@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 import base64
 
@@ -48,6 +49,35 @@ async def get_user_repositories(access_token: str):
         response.raise_for_status()
 
         return response.json()
+
+
+async def get_user_contribution_counts(access_token: str, username: str):
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+
+    async with httpx.AsyncClient() as client:
+        pull_requests_response, issues_response = await asyncio.gather(
+            client.get(
+                f"{GITHUB_API_URL}/search/issues",
+                headers=headers,
+                params={"q": f"author:{username} type:pr", "per_page": 1}
+            ),
+            client.get(
+                f"{GITHUB_API_URL}/search/issues",
+                headers=headers,
+                params={"q": f"author:{username} type:issue", "per_page": 1}
+            )
+        )
+
+    pull_requests_response.raise_for_status()
+    issues_response.raise_for_status()
+    return {
+        "pull_requests": pull_requests_response.json().get("total_count", 0),
+        "issues": issues_response.json().get("total_count", 0)
+    }
 
 async def get_repository_languages(
     access_token: str,

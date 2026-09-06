@@ -1,5 +1,17 @@
 const API_URL = "http://localhost:8000";
 
+export async function signOut() {
+  const response = await fetch(`${API_URL}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+    redirect: "manual"
+  });
+
+  if (!response.ok && response.type !== "opaqueredirect") {
+    throw new Error("Unable to sign out");
+  }
+}
+
 
 export async function getCurrentUser() {
 
@@ -31,6 +43,14 @@ export async function getRepositories() {
     throw new Error("Unable to fetch repositories");
   }
 
+  return response.json();
+}
+
+export async function getActivitySummary() {
+  const response = await fetch(`${API_URL}/github/activity-summary`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Unable to fetch activity summary");
   return response.json();
 }
 

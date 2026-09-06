@@ -3,7 +3,8 @@ from fastapi import APIRouter, Cookie, HTTPException
 from app.session import read_session
 from app.services.github_api import (
     get_github_user,
-    get_user_repositories
+    get_user_repositories,
+    get_user_contribution_counts
 )
 from app.services.analysis_service import (
     analyze_repository_cached,
@@ -51,6 +52,16 @@ async def user_repositories(
 
     access_token = get_access_token(session)
     return await get_user_repositories(access_token)
+
+
+@router.get("/activity-summary")
+async def activity_summary(
+    session: str | None = Cookie(default=None)
+):
+    access_token = get_access_token(session)
+    user = await get_github_user(access_token)
+    counts = await get_user_contribution_counts(access_token, user["login"])
+    return {"username": user["login"], **counts}
 
 
 @router.get("/repositories/{owner}/{repo}/analysis")
