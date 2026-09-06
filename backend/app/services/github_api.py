@@ -98,7 +98,8 @@ async def get_repository(
 async def get_repository_commits(
     access_token: str,
     owner: str,
-    repo: str
+    repo: str,
+    max_pages: int = 10
 ):
 
     headers = {
@@ -107,21 +108,24 @@ async def get_repository_commits(
         "X-GitHub-Api-Version": "2022-11-28"
     }
 
-    params = {
-        "per_page": 100
-    }
+    commits = []
 
     async with httpx.AsyncClient() as client:
+        for page in range(1, max_pages + 1):
+            response = await client.get(
+                f"{GITHUB_API_URL}/repos/{owner}/{repo}/commits",
+                headers=headers,
+                params={"per_page": 100, "page": page}
+            )
 
-        response = await client.get(
-            f"{GITHUB_API_URL}/repos/{owner}/{repo}/commits",
-            headers=headers,
-            params=params
-        )
+            response.raise_for_status()
+            page_commits = response.json()
+            commits.extend(page_commits)
 
-        response.raise_for_status()
+            if len(page_commits) < 100:
+                break
 
-        return response.json()
+    return commits
 
 async def get_repository_tree(
     access_token: str,

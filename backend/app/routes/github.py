@@ -5,7 +5,10 @@ from app.services.github_api import (
     get_github_user,
     get_user_repositories
 )
-from app.services.repo_analyzer import analyze_repository
+from app.services.analysis_service import (
+    analyze_repository_cached,
+    build_profile
+)
 
 
 router = APIRouter(
@@ -59,10 +62,40 @@ async def analyze_repo(
 
     access_token = get_access_token(session)
 
-    result = await analyze_repository(
+    result, cached = await analyze_repository_cached(
         access_token,
         owner,
         repo
     )
 
-    return result
+    return {**result, "cached": cached}
+
+
+@router.post("/analyze-all")
+async def analyze_all_repositories(
+    session: str | None = Cookie(default=None)
+):
+    access_token = get_access_token(session)
+    repositories = await get_user_repositories(access_token)
+    analyses = []
+    failures = []
+
+    for repository in repositories:
+        try:
+            analysis, _ = await analyze_repository_cached(
+                access_token,
+                repository["owner"]["login"],
+                repository["name"]
+            )
+            analyses.append(analysis)
+        except Exception as error:
+            failures.append({
+                "full_name": repository.get("full_name"),
+                "error": str(error)
+            })
+
+    return {
+        "profile": build_profile(analyses),
+        "analyses": analyses,
+        "failures": failures
+    }
