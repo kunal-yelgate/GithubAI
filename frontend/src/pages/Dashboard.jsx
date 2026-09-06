@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import {
   analyzeAllRepositories,
+  getActivitySummary,
   getCurrentUser,
   getRepositories,
+  signOut,
 } from "../services/api";
 import ChatBox from "../components/ChatBox";
 
@@ -16,19 +18,25 @@ function Stat({ label, value, detail }) {
   );
 }
 
-function Dashboard({ onOpenRepository }) {
+function Dashboard({ onOpenRepository, onSignedOut }) {
   const [user, setUser] = useState(null);
   const [repositories, setRepositories] = useState([]);
+  const [activity, setActivity] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [languageFilter, setLanguageFilter] = useState("All");
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
-    Promise.all([getCurrentUser(), getRepositories()])
-      .then(([userData, repoData]) => {
+    Promise.all([getCurrentUser(), getRepositories(), getActivitySummary()])
+      .then(([userData, repoData, activityData]) => {
         setUser(userData);
         setRepositories(repoData);
+        setActivity(activityData);
       })
       .catch(() => setError("GitHub data could not be loaded."))
       .finally(() => setLoading(false));
@@ -46,6 +54,17 @@ function Dashboard({ onOpenRepository }) {
     }
   }
 
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await signOut();
+      onSignedOut();
+    } catch (requestError) {
+      setError(requestError.message);
+      setSigningOut(false);
+    }
+  }
+
   if (loading)
     return (
       <main className="loading-state">Loading your GitHub workspace...</main>
@@ -58,6 +77,18 @@ function Dashboard({ onOpenRepository }) {
     (total, repo) => total + repo.stargazers_count,
     0,
   );
+  const languages = [
+    "All",
+    ...new Set(repositories.map((repo) => repo.language).filter(Boolean)),
+  ];
+  const filteredRepositories = repositories.filter((repo) => {
+    const matchesSearch = repo.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesLanguage =
+      languageFilter === "All" || repo.language === languageFilter;
+    return matchesSearch && matchesLanguage;
+  });
 
   return (
     <main className="shell">
@@ -68,9 +99,42 @@ function Dashboard({ onOpenRepository }) {
           <h1>GitHub Atlas</h1>
         </div>
         {user && (
-          <div className="user-chip">
-            <img src={user.avatar_url} alt="" />
-            <span>@{user.login}</span>
+          <div className="profile-area">
+            <button
+              className="user-chip"
+              type="button"
+              aria-expanded={profileOpen}
+              onClick={() => setProfileOpen((open) => !open)}
+            >
+              <img src={user.avatar_url} alt="" />
+              <span>
+                <strong>{user.name || user.login}</strong>
+                <small>@{user.login}</small>
+              </span>
+              <b>{profileOpen ? "↑" : "↓"}</b>
+            </button>
+            {profileOpen && (
+              <div className="profile-menu">
+                <div className="profile-menu-head">
+                  <img src={user.avatar_url} alt="" />
+                  <div>
+                    <strong>{user.name || user.login}</strong>
+                    <span>@{user.login}</span>
+                  </div>
+                </div>
+                <a href={user.html_url} target="_blank" rel="noreferrer">
+                  View GitHub profile <span>↗</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                >
+                  {signingOut ? "Signing out..." : "Sign out"}
+                  <span>→</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </header>
@@ -114,6 +178,33 @@ function Dashboard({ onOpenRepository }) {
           detail={profile ? "from cached analyses" : "run account analysis"}
         />
       </section>
+      {activity && (
+        <section className="activity-band">
+          <div className="activity-intro">
+            <span className="activity-spark">✦</span>
+            <div>
+              <p className="eyebrow accent">Contribution pulse</p>
+              <h2>Your open-source footprint</h2>
+            </div>
+          </div>
+          <div className="activity-metric">
+            <strong>{activity.pull_requests}</strong>
+            <span>Pull requests made</span>
+          </div>
+          <div className="activity-metric">
+            <strong>{activity.issues}</strong>
+            <span>Issues opened</span>
+          </div>
+          <a
+            href={`https://github.com/${activity.username}?tab=activity`}
+            target="_blank"
+            rel="noreferrer"
+            className="activity-link"
+          >
+            View activity ↗
+          </a>
+        </section>
+      )}
       {profile && (
         <section className="profile-strip">
           <div>
@@ -136,10 +227,33 @@ function Dashboard({ onOpenRepository }) {
           <p className="eyebrow">Library</p>
           <h2>Your repositories</h2>
         </div>
-        <span className="muted">{repositories.length} projects</span>
+        <span className="muted">
+          {filteredRepositories.length} of {repositories.length} projects
+        </span>
       </section>
+      <div className="repo-toolbar">
+        <label className="search-field">
+          <span>⌕</span>
+          <input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search repositories"
+          />
+        </label>
+        <div className="filter-pills">
+          {languages.map((language) => (
+            <button
+              key={language}
+              className={languageFilter === language ? "active" : ""}
+              onClick={() => setLanguageFilter(language)}
+            >
+              {language}
+            </button>
+          ))}
+        </div>
+      </div>
       <section className="repo-grid">
-        {repositories.map((repo) => (
+        {filteredRepositories.map((repo) => (
           <button
             className="repo-card"
             key={repo.id}

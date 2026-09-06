@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import "./chat.css";
+import "./profile.css";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Repository from "./pages/Repository";
@@ -19,7 +20,7 @@ function App() {
   }, []);
 
   if (checkingSession) {
-    return <h2>Checking GitHub session...</h2>;
+    return <main className="loading-state">Checking GitHub session...</main>;
   }
 
   if (!isLoggedIn) {
@@ -35,7 +36,12 @@ function App() {
     );
   }
 
-  return <Dashboard onOpenRepository={setSelectedRepository} />;
+  return (
+    <Dashboard
+      onOpenRepository={setSelectedRepository}
+      onSignedOut={() => setIsLoggedIn(false)}
+    />
+  );
 }
 
 export default App;

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from app.session import create_session
 
 from app.services.github_oauth import (
@@ -25,6 +25,18 @@ async def github_login():
     github_url = get_github_login_url()
 
     return RedirectResponse(github_url)
+
+
+@router.post("/logout")
+async def logout():
+    response = JSONResponse({"signed_out": True})
+    response.delete_cookie(
+        key="session",
+        httponly=True,
+        secure=False,
+        samesite="lax"
+    )
+    return response
 
 
 @router.get("/github/callback")
