@@ -1,1 +1,7 @@
 implementation/
+.env
+backend/.env
+backend/data/
+__pycache__/
+*.pyc
+frontend/dist/

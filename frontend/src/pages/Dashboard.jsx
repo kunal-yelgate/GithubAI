@@ -4,6 +4,7 @@ import {
   getCurrentUser,
   getRepositories,
 } from "../services/api";
+import ChatBox from "../components/ChatBox";
 
 function Stat({ label, value, detail }) {
   return (
@@ -129,6 +130,7 @@ function Dashboard({ onOpenRepository }) {
           </div>
         </section>
       )}
+      <ChatBox />
       <section className="section-heading">
         <div>
           <p className="eyebrow">Library</p>

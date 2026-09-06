@@ -19,5 +19,19 @@ def get_connection():
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS code_chunks (
+            repository TEXT NOT NULL,
+            source_version TEXT,
+            file_path TEXT NOT NULL,
+            language TEXT,
+            chunk_index INTEGER NOT NULL,
+            content TEXT NOT NULL,
+            embedding TEXT,
+            PRIMARY KEY (repository, file_path, chunk_index)
+        )
+        """
+    )
     connection.commit()
     return connection

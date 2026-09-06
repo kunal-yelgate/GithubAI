@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import auth
 from app.routes import auth
 from app.routes import github
+from app.routes import ai
 
 
 
@@ -23,6 +24,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(github.router)
+app.include_router(ai.router)
 
 @app.get("/")
 async def root():

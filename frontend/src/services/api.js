@@ -53,3 +53,16 @@ export async function analyzeAllRepositories() {
   if (!response.ok) throw new Error("Unable to analyze repositories");
   return response.json();
 }
+
+export async function askAI(question, scope = {}) {
+  const response = await fetch(`${API_URL}/ai/chat`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, ...scope })
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || "AI request failed");
+  return data;
+}

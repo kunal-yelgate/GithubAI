@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { analyzeRepository } from "../services/api";
+import ChatBox from "../components/ChatBox";
 
 function Stat({ label, value, detail }) {
   return (
@@ -157,6 +158,11 @@ function Repository({ repository, onBack }) {
               </div>
             </article>
           </section>
+          <ChatBox
+            owner={repository.owner.login}
+            repo={repository.name}
+            title={`Ask about ${repository.name}`}
+          />
         </>
       )}
     </main>

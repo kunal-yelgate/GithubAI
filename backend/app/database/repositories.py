@@ -4,6 +4,39 @@ from datetime import datetime, timezone
 from app.database.connection import get_connection
 
 
+def replace_code_chunks(repository: str, source_version: str | None, chunks: list[dict]):
+    connection = get_connection()
+    connection.execute("DELETE FROM code_chunks WHERE repository = ?", (repository,))
+    connection.executemany(
+        """
+        INSERT INTO code_chunks
+        (repository, source_version, file_path, language, chunk_index, content, embedding)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        [(
+            repository,
+            source_version,
+            chunk["file"],
+            chunk["language"],
+            chunk["chunk_index"],
+            chunk["content"],
+            json.dumps(chunk.get("embedding")) if chunk.get("embedding") else None
+        ) for chunk in chunks]
+    )
+    connection.commit()
+    connection.close()
+
+
+def get_code_chunks(repository: str):
+    connection = get_connection()
+    rows = connection.execute(
+        "SELECT * FROM code_chunks WHERE repository = ?",
+        (repository,)
+    ).fetchall()
+    connection.close()
+    return [dict(row) for row in rows]
+
+
 def get_cached_analysis(full_name: str, source_version: str | None):
     connection = get_connection()
     row = connection.execute(
