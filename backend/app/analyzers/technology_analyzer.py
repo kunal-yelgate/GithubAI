@@ -1,6 +1,24 @@
 import json
 
 
+FRAMEWORK_DEPENDENCIES = {
+    "fastapi": "FastAPI",
+    "flask": "Flask",
+    "django": "Django",
+    "react": "React",
+    "react-dom": "React",
+    "vue": "Vue",
+    "angular": "Angular",
+    "next": "Next.js",
+    "express": "Express",
+    "uvicorn": "Uvicorn",
+    "sqlalchemy": "SQLAlchemy",
+    "pandas": "Pandas",
+    "numpy": "NumPy",
+    "axios": "Axios"
+}
+
+
 def analyze_package_json(content: str):
 
     data = json.loads(content)

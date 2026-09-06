@@ -181,3 +181,16 @@ async def get_repository_file(
         ).decode("utf-8")
 
         return content
+
+
+async def get_repository_readme(
+    access_token: str,
+    owner: str,
+    repo: str
+):
+    return await get_repository_file(
+        access_token,
+        owner,
+        repo,
+        "README.md"
+    )
