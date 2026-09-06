@@ -1,4 +1,4 @@
-# GitHub AI Repo Analyzer
+# GitHub AI Repo Intelligence
 
 A full-stack application that authenticates with GitHub, displays a user's repositories, and analyzes repository metadata, languages, structure, commits, and technologies.
 
