@@ -13,6 +13,10 @@ from app.analyzers.structure_analyzer import (
     analyze_structure
 )
 
+from app.analyzers.commit_analyzer import (
+    analyze_commits
+)
+
 
 async def analyze_repository(
     access_token: str,
@@ -42,7 +46,12 @@ async def analyze_repository(
     commits = await get_repository_commits(
         access_token,
         owner,
-        repo
+        repo,
+        max_pages=10
+    )
+    
+    commit_analysis = analyze_commits(
+    commits
     )
 
     tree = await get_repository_tree(
@@ -69,7 +78,7 @@ async def analyze_repository(
 
         "structure": structure_analysis,
 
-        "commits": {
-            "fetched": len(commits)
-        }
+        "commits": commit_analysis
     }
+
+
