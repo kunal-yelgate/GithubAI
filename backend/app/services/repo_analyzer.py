@@ -1,3 +1,5 @@
+import asyncio
+
 from app.services.github_api import (
     get_repository,
     get_repository_languages,
@@ -85,15 +87,16 @@ async def analyze_repository(
     selected_files = important_file_analysis["important_files"]
     source_contents = {}
 
-    for path in selected_files:
+    async def fetch_source(path: str):
         try:
-            content = await get_repository_file(
-                access_token,
-                owner,
-                repo,
-                path
-            )
+            return path, await get_repository_file(access_token, owner, repo, path)
         except Exception:
+            return path, None
+
+    fetched_files = await asyncio.gather(*(fetch_source(path) for path in selected_files))
+
+    for path, content in fetched_files:
+        if content is None:
             continue
 
         if path.endswith("package.json"):
@@ -142,7 +145,7 @@ async def analyze_repository(
         "readme": analyze_readme(readme_content),
         "important_files": important_file_analysis,
         "source_analysis": source_analysis,
-        "architecture": analyze_architecture(files, technologies)
+        "architecture": analyze_architecture(files, technologies, source_analysis)
     }
 
 
