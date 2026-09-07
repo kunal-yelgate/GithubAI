@@ -38,10 +38,12 @@ async def index_repository(access_token: str, owner: str, repo: str):
 
 async def retrieve_chunks(access_token: str, owner: str, repo: str, question: str, limit: int = 3):
     full_name = f"{owner}/{repo}"
-    chunks = get_code_chunks(full_name)
+    repository = await get_repository(access_token, owner, repo)
+    source_version = repository.get("pushed_at") or repository.get("updated_at")
+    chunks = get_code_chunks(full_name, source_version)
     if not chunks:
         await index_repository(access_token, owner, repo)
-        chunks = get_code_chunks(full_name)
+        chunks = get_code_chunks(full_name, source_version)
 
     query_embedding = await embed_texts([question])
     question_terms = _terms(question)
@@ -49,7 +51,10 @@ async def retrieve_chunks(access_token: str, owner: str, repo: str, question: st
     for chunk in chunks:
         score = 0.0
         if query_embedding and chunk.get("embedding"):
-            score = cosine_similarity(query_embedding[0], json.loads(chunk["embedding"]))
+            try:
+                score = cosine_similarity(query_embedding[0], json.loads(chunk["embedding"]))
+            except (TypeError, ValueError, json.JSONDecodeError):
+                score = 0.0
         else:
             content_terms = _terms(chunk["file_path"] + " " + chunk["content"])
             score = len(question_terms & content_terms) / max(len(question_terms), 1)

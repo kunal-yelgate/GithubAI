@@ -91,7 +91,7 @@ function Dashboard({ onOpenRepository, onSignedOut }) {
   });
 
   return (
-    <main className="shell">
+    <main className="shell dashboard-shell">
       <header className="topbar">
         <div className="brand-mark">GA</div>
         <div>
@@ -138,10 +138,12 @@ function Dashboard({ onOpenRepository, onSignedOut }) {
           </div>
         )}
       </header>
-      <section className="intro-row">
+      <section className="intro-row dashboard-hero">
         <div>
           <p className="eyebrow accent">Your workspace</p>
-          <h2>A clearer map of how you build.</h2>
+          <h2>
+            A clearer map of <span>how you build.</span>
+          </h2>
           <p className="lede">
             Analyze repository structure, technologies, activity, and
             architecture from one quiet workspace.
@@ -156,7 +158,10 @@ function Dashboard({ onOpenRepository, onSignedOut }) {
         </button>
       </section>
       {error && <div className="notice error">{error}</div>}
-      <section className="stats-grid">
+      <section
+        className="stats-grid dashboard-stats"
+        aria-label="Workspace summary"
+      >
         <Stat
           label="Repositories"
           value={profile?.total_repositories ?? repositories.length}
@@ -252,7 +257,7 @@ function Dashboard({ onOpenRepository, onSignedOut }) {
           ))}
         </div>
       </div>
-      <section className="repo-grid">
+      <section className="repo-grid" aria-label="Repositories">
         {filteredRepositories.map((repo) => (
           <button
             className="repo-card"

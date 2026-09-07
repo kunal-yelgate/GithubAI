@@ -39,11 +39,12 @@ async def _request_provider(messages: list[dict], provider_name: str):
     if not settings["key"] or settings["key"].startswith("replace-after"):
         raise AIProviderError(f"{provider_name} API key is not configured")
 
+    configured_model = AI_MODEL if provider_name == AI_PROVIDER else None
     payload = {
-        "model": AI_MODEL or settings["default_model"],
+        "model": configured_model or settings["default_model"],
         "messages": messages,
         "temperature": 0.2,
-        "max_tokens": 1200
+        "max_tokens": 900
     }
     headers = {
         "Authorization": f"Bearer {settings['key']}",
@@ -74,6 +75,11 @@ async def ask_llm(messages: list[dict], provider: str | None = None):
         return await _request_provider(messages, provider_name)
     except AIProviderError as error:
         error_text = str(error).lower()
-        if provider is None and provider_name == "groq" and "context_length" in error_text:
+        if (
+            provider is None
+            and provider_name == "groq"
+            and ("context_length" in error_text or "rate_limit" in error_text)
+            and MISTRAL_API_KEY
+        ):
             return await _request_provider(messages, "mistral")
         raise

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import "./chat.css";
 import "./profile.css";
+import "./cursor-theme.css";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Repository from "./pages/Repository";

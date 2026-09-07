@@ -11,12 +11,12 @@ For code questions, distinguish static-analysis findings from direct source exce
 Keep answers useful and concise, with short headings or bullets when appropriate.
 Format every answer for a human reader:
 1. Start with a direct answer in one or two sentences.
-2. Use short Markdown headings beginning with ### when sections are useful.
+2. Use short Markdown headings beginning with -> when sections are useful.
 3. Use simple bullet points for evidence and file paths in backticks.
 4. End with a brief limitation statement only when the supplied context is incomplete.
 Do not return JSON, XML, provider metadata, or internal reasoning."""
 
-MAX_CONTEXT_CHARS = 18000
+MAX_CONTEXT_CHARS = 12000
 
 
 def _compact_analysis(analysis: dict):
@@ -35,8 +35,13 @@ def _compact_analysis(analysis: dict):
 
 
 def repository_context(analysis: dict, chunks: list[dict]):
+    compact = _compact_analysis(analysis)
+    architecture = compact.get("architecture", {})
+    architecture["module_graph"] = architecture.get("module_graph", [])[:20]
+    compact["source_analysis"] = compact.get("source_analysis", [])[:25]
+    compact["architecture"] = architecture
     return {
-        "analysis": _compact_analysis(analysis),
+        "analysis": compact,
         "retrieved_code_chunks": [
             {
                 "file": chunk["file_path"],
@@ -44,7 +49,7 @@ def repository_context(analysis: dict, chunks: list[dict]):
                 "chunk_index": chunk["chunk_index"],
                 "content": chunk["content"][:2400]
             }
-            for chunk in chunks[:4]
+            for chunk in chunks[:2]
         ]
     }
 
@@ -77,7 +82,17 @@ def profile_context(repositories: list[dict]):
 def build_messages(question: str, context: dict):
     context_text = json.dumps(context, separators=(",", ":"), default=str)
     if len(context_text) > MAX_CONTEXT_CHARS:
-        context_text = context_text[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
+        context_text = json.dumps(
+            {
+                **context,
+                "retrieved_code_chunks": context.get("retrieved_code_chunks", [])[:1],
+                "context_note": "Some low-priority context was omitted to preserve response speed."
+            },
+            separators=(",", ":"),
+            default=str
+        )
+        if len(context_text) > MAX_CONTEXT_CHARS:
+            context_text = context_text[:MAX_CONTEXT_CHARS] + "\n[context truncated]"
 
     return [
         {"role": "system", "content": SYSTEM_PROMPT},

@@ -27,12 +27,18 @@ def replace_code_chunks(repository: str, source_version: str | None, chunks: lis
     connection.close()
 
 
-def get_code_chunks(repository: str):
+def get_code_chunks(repository: str, source_version: str | None = None):
     connection = get_connection()
-    rows = connection.execute(
-        "SELECT * FROM code_chunks WHERE repository = ?",
-        (repository,)
-    ).fetchall()
+    if source_version is None:
+        rows = connection.execute(
+            "SELECT * FROM code_chunks WHERE repository = ?",
+            (repository,)
+        ).fetchall()
+    else:
+        rows = connection.execute(
+            "SELECT * FROM code_chunks WHERE repository = ? AND source_version = ?",
+            (repository, source_version)
+        ).fetchall()
     connection.close()
     return [dict(row) for row in rows]
 
