@@ -1,6 +1,6 @@
 # GitHub AI Repo Intelligence
 
-A full-stack application that authenticates with GitHub, displays a user's repositories, and provides fresh, evidence-based repository and architecture analysis with Groq or Mistral.
+A full-stack application that authenticates with GitHub, displays a user's repositories, and analyzes repository metadata, languages, structure, commits, and technologies.
 
 ## Stack
 
@@ -8,7 +8,6 @@ A full-stack application that authenticates with GitHub, displays a user's repos
 - **Backend:** FastAPI, Uvicorn, HTTPX
 - **Authentication:** GitHub OAuth with a signed session cookie
 - **GitHub API:** User profile, repositories, repository languages, commits, tree, and file contents
-- **AI:** Groq and Mistral chat completion providers with retrieval-augmented repository context
 
 ## Project Structure
 
@@ -31,7 +30,6 @@ frontend/
   package.json
 
 implementation/     Step-by-step implementation notes
-.github/workflows/  Frontend and backend continuous integration
 ```
 
 ## Prerequisites
@@ -59,17 +57,6 @@ FRONTEND_URL=http://localhost:5173
 ```
 
 Do not commit `backend/.env` or expose the client secret.
-
-Optional AI configuration can be added to `backend/.env`:
-
-```env
-AI_PROVIDER=groq
-GROQ_API_KEY=your_groq_api_key
-MISTRAL_API_KEY=your_mistral_api_key
-AI_MODEL=your_provider_model
-```
-
-When `AI_MODEL` is not set, the application uses the configured provider's default model. Keep provider keys private and never commit them.
 
 ## Backend Setup
 
@@ -121,18 +108,14 @@ npm run preview
 
 ## API Endpoints
 
-| Method | Endpoint                                       | Description                                    |
-| ------ | ---------------------------------------------- | ---------------------------------------------- |
-| `GET`  | `/`                                            | API health response                            |
-| `GET`  | `/auth/github`                                 | Starts GitHub OAuth                            |
-| `GET`  | `/auth/github/callback`                        | Handles the OAuth callback                     |
-| `GET`  | `/github/me`                                   | Returns the authenticated GitHub user          |
-| `GET`  | `/github/repositories`                         | Returns the authenticated user's repositories  |
-| `GET`  | `/github/repositories/{owner}/{repo}/analysis` | Analyzes a repository                          |
-| `GET`  | `/github/activity-summary`                     | Returns authored pull request and issue counts |
-| `POST` | `/github/analyze-all`                          | Analyzes all accessible user repositories      |
-| `POST` | `/ai/chat`                                     | Answers a profile or repository question       |
-| `POST` | `/ai/index/{owner}/{repo}`                     | Rebuilds the repository code index             |
+| Method | Endpoint                                       | Description                                   |
+| ------ | ---------------------------------------------- | --------------------------------------------- |
+| `GET`  | `/`                                            | API health response                           |
+| `GET`  | `/auth/github`                                 | Starts GitHub OAuth                           |
+| `GET`  | `/auth/github/callback`                        | Handles the OAuth callback                    |
+| `GET`  | `/github/me`                                   | Returns the authenticated GitHub user         |
+| `GET`  | `/github/repositories`                         | Returns the authenticated user's repositories |
+| `GET`  | `/github/repositories/{owner}/{repo}/analysis` | Analyzes a repository                         |
 
 The GitHub data endpoints require the signed `session` cookie created during login.
 
@@ -143,27 +126,9 @@ The repository analysis endpoint currently returns:
 - Repository metadata such as name, description, stars, forks, issues, and default branch
 - Language statistics
 - Repository structure, including files, directories, and extensions
-- Recent commit and activity analysis
-- Detected technologies, dependency files, README signals, and important files
-- Source-level summaries for functions, classes, components, imports, exports, and routes
-- Architecture type, inferred layers, entry points, and import-based module relationships
+- Number of fetched commits
 
-The analyzer uses the repository's actual default branch when requesting the Git tree. It inspects a bounded set of prioritized files concurrently, then caches the result against GitHub's latest repository update timestamp.
-
-## AI Repository Questions
-
-Repository questions use the latest repository version as the retrieval source. The system combines structured analysis with relevant code chunks and import relationships before calling the selected AI provider. If the repository context is too large for the automatic Groq request, the service can retry with Mistral.
-
-Examples of useful questions:
-
-- `Explain the architecture and request flow.`
-- `Where is authentication implemented?`
-- `Which modules depend on the GitHub API?`
-- `What are the main entry points and service boundaries?`
-
-## Continuous Integration
-
-The GitHub Actions workflow in `.github/workflows/ci.yml` runs on pushes to `main` or `master` and on pull requests. It installs dependencies, runs frontend ESLint and production build checks, and compiles the backend.
+The analyzer uses the repository's actual default branch when requesting the Git tree.
 
 ## Troubleshooting
 
