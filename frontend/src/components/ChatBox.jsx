@@ -4,23 +4,40 @@ import { askAI } from "../services/api";
 function formatText(text) {
   return text
     .replace(/<\|[^>]+\|>/g, "")
-    .replace(/\*\*/g, "")
-    .replace(/\*/g, "")
-    .replace(/`/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
 function renderInline(text) {
-  return text
-    .split(/(`[^`]+`)/g)
-    .map((part, index) =>
-      part.startsWith("`") && part.endsWith("`") ? (
-        <code key={`${part}-${index}`}>{part.slice(1, -1)}</code>
-      ) : (
-        <span key={`${part}-${index}`}>{part}</span>
-      ),
-    );
+  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+
+  return tokens.map((part, index) => {
+    if (!part) return null;
+
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong
+          key={`${part}-${index}`}
+          className="font-semibold text-stone-900"
+        >
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code
+          key={`${part}-${index}`}
+          className="rounded bg-stone-200 px-1.5 py-0.5 text-[11px] text-stone-800"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+
+    return <span key={`${part}-${index}`}>{part}</span>;
+  });
 }
 
 function AnswerContent({ answer }) {
@@ -31,18 +48,40 @@ function AnswerContent({ answer }) {
     const trimmed = line.trim();
     if (!trimmed) return;
 
+    if (/^#{1,3}\s+/.test(trimmed)) {
+      blocks.push(
+        <h3
+          key={`heading-${index}`}
+          className="mt-4 text-base font-semibold tracking-[-0.02em] text-stone-900"
+        >
+          {renderInline(trimmed.replace(/^#{1,3}\s+/, ""))}
+        </h3>,
+      );
+      return;
+    }
+
     if (
       /^(?:Overview|Summary|Key findings?|Findings?|Impact|Recommendation|Limitations?)\s*:/i.test(
         trimmed,
       )
     ) {
-      blocks.push(<h3 key={`heading-${index}`}>{renderInline(trimmed)}</h3>);
+      blocks.push(
+        <h3
+          key={`heading-${index}`}
+          className="mt-4 text-base font-semibold tracking-[-0.02em] text-stone-900"
+        >
+          {renderInline(trimmed)}
+        </h3>,
+      );
       return;
     }
 
     if (/^[-*]\s+/.test(trimmed)) {
       blocks.push(
-        <li key={`bullet-${index}`}>
+        <li
+          key={`bullet-${index}`}
+          className="ml-5 list-disc leading-7 text-stone-700"
+        >
           {renderInline(trimmed.replace(/^[-*]\s+/, ""))}
         </li>,
       );
@@ -51,17 +90,24 @@ function AnswerContent({ answer }) {
 
     if (/^\d+[.)]\s+/.test(trimmed)) {
       blocks.push(
-        <li className="numbered-item" key={`number-${index}`}>
+        <li
+          key={`number-${index}`}
+          className="ml-5 list-decimal leading-7 text-stone-700"
+        >
           {renderInline(trimmed.replace(/^\d+[.)]\s+/, ""))}
         </li>,
       );
       return;
     }
 
-    blocks.push(<p key={`paragraph-${index}`}>{renderInline(trimmed)}</p>);
+    blocks.push(
+      <p key={`paragraph-${index}`} className="leading-7 text-stone-700">
+        {renderInline(trimmed)}
+      </p>,
+    );
   });
 
-  return <div className="answer-content">{blocks}</div>;
+  return <div className="space-y-2">{blocks}</div>;
 }
 
 function ChatBox({ owner, repo, title = "Ask Atlas" }) {

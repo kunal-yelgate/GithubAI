@@ -1,3 +1,5 @@
+import re
+
 import httpx
 
 from app.config import (
@@ -32,6 +34,18 @@ class AIProviderError(RuntimeError):
     pass
 
 
+def sanitize_response(answer: str) -> str:
+    text = (answer or "").strip()
+    text = re.sub(r"```.*?```", "", text, flags=re.S)
+    text = re.sub(r"(?m)^[\t ]*[-*](?=\s)", "", text)
+    text = re.sub(r"(?m)^[\t ]*->\s*", "", text)
+    text = re.sub(r"[\U0001F300-\U0001FAFF\u2600-\u27BF]", "", text)
+    text = text.replace("\r", "")
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r"\n\s*\n\s*", "\n\n", text)
+    return text.strip()
+
+
 async def _request_provider(messages: list[dict], provider_name: str):
     settings = PROVIDERS.get(provider_name)
     if not settings:
@@ -64,7 +78,8 @@ async def _request_provider(messages: list[dict], provider_name: str):
     except (KeyError, IndexError, TypeError) as error:
         raise AIProviderError("AI provider returned an unexpected response") from error
 
-    return {"answer": answer, "provider": provider_name, "model": payload["model"]}
+    clean_answer = sanitize_response(answer)
+    return {"answer": clean_answer, "provider": provider_name, "model": payload["model"]}
 
 
 async def ask_llm(messages: list[dict], provider: str | None = None):
