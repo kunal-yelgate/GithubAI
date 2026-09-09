@@ -1,68 +1,113 @@
 import { useState } from "react";
 import { askAI } from "../services/api";
 
-function renderInline(text) {
+function formatText(text) {
   return text
-    .split(/(`[^`]+`)/g)
-    .map((part, index) =>
-      part.startsWith("`") && part.endsWith("`") ? (
-        <code key={`${part}-${index}`}>{part.slice(1, -1)}</code>
-      ) : (
-        <span key={`${part}-${index}`}>{part}</span>
-      ),
-    );
+    .replace(/<\|[^>]+\|>/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function renderInline(text) {
+  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+
+  return tokens.map((part, index) => {
+    if (!part) return null;
+
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong
+          key={`${part}-${index}`}
+          className="font-semibold text-stone-900"
+        >
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code
+          key={`${part}-${index}`}
+          className="rounded bg-stone-200 px-1.5 py-0.5 text-[11px] text-stone-800"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+
+    return <span key={`${part}-${index}`}>{part}</span>;
+  });
 }
 
 function AnswerContent({ answer }) {
-  const lines = answer.replace(/<\|[^>]+\|>/g, "").split("\n");
+  const lines = formatText(answer).split("\n");
   const blocks = [];
-  let codeLines = [];
-  let inCodeBlock = false;
 
   lines.forEach((line, index) => {
-    if (line.trim().startsWith("```")) {
-      if (inCodeBlock) {
-        blocks.push(
-          <pre key={`code-${index}`}>
-            <code>{codeLines.join("\n")}</code>
-          </pre>,
-        );
-        codeLines = [];
-      }
-      inCodeBlock = !inCodeBlock;
-      return;
-    }
-    if (inCodeBlock) {
-      codeLines.push(line);
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    if (/^#{1,3}\s+/.test(trimmed)) {
+      blocks.push(
+        <h3
+          key={`heading-${index}`}
+          className="mt-4 text-base font-semibold tracking-[-0.02em] text-stone-900"
+        >
+          {renderInline(trimmed.replace(/^#{1,3}\s+/, ""))}
+        </h3>,
+      );
       return;
     }
 
-    const trimmed = line.trim();
-    if (!trimmed) return;
-    if (trimmed.startsWith("### ") || trimmed.startsWith("## ")) {
+    if (
+      /^(?:Overview|Summary|Key findings?|Findings?|Impact|Recommendation|Limitations?)\s*:/i.test(
+        trimmed,
+      )
+    ) {
       blocks.push(
-        <h3 key={`heading-${index}`}>
-          {renderInline(trimmed.replace(/^#+\s+/, ""))}
+        <h3
+          key={`heading-${index}`}
+          className="mt-4 text-base font-semibold tracking-[-0.02em] text-stone-900"
+        >
+          {renderInline(trimmed)}
         </h3>,
       );
-    } else if (/^[-*]\s+/.test(trimmed)) {
+      return;
+    }
+
+    if (/^[-*]\s+/.test(trimmed)) {
       blocks.push(
-        <li key={`bullet-${index}`}>
+        <li
+          key={`bullet-${index}`}
+          className="ml-5 list-disc leading-7 text-stone-700"
+        >
           {renderInline(trimmed.replace(/^[-*]\s+/, ""))}
         </li>,
       );
-    } else if (/^\d+[.)]\s+/.test(trimmed)) {
+      return;
+    }
+
+    if (/^\d+[.)]\s+/.test(trimmed)) {
       blocks.push(
-        <li className="numbered-item" key={`number-${index}`}>
+        <li
+          key={`number-${index}`}
+          className="ml-5 list-decimal leading-7 text-stone-700"
+        >
           {renderInline(trimmed.replace(/^\d+[.)]\s+/, ""))}
         </li>,
       );
-    } else {
-      blocks.push(<p key={`paragraph-${index}`}>{renderInline(trimmed)}</p>);
+      return;
     }
+
+    blocks.push(
+      <p key={`paragraph-${index}`} className="leading-7 text-stone-700">
+        {renderInline(trimmed)}
+      </p>,
+    );
   });
 
-  return <div className="answer-content">{blocks}</div>;
+  return <div className="space-y-2">{blocks}</div>;
 }
 
 function ChatBox({ owner, repo, title = "Ask Atlas" }) {
@@ -72,6 +117,21 @@ function ChatBox({ owner, repo, title = "Ask Atlas" }) {
   const [providerChoice, setProviderChoice] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  function streamAnswer(text) {
+    const cleaned = formatText(text);
+    let index = 0;
+
+    setAnswer("");
+    const timer = setInterval(() => {
+      index += 1;
+      setAnswer(cleaned.slice(0, index));
+
+      if (index >= cleaned.length) {
+        clearInterval(timer);
+      }
+    }, 18);
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -84,9 +144,9 @@ function ChatBox({ owner, repo, title = "Ask Atlas" }) {
         repo,
         ...(providerChoice ? { provider: providerChoice } : {}),
       });
-      setAnswer(result.answer);
       setProvider(result.provider);
       setQuestion("");
+      streamAnswer(result.answer);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -95,17 +155,26 @@ function ChatBox({ owner, repo, title = "Ask Atlas" }) {
   }
 
   return (
-    <section className="chat-panel">
-      <div className="chat-heading">
+    <section className="mx-auto mt-8 w-full max-w-5xl rounded-2xl border border-stone-200 bg-white/80 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:p-6">
+      <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <p className="eyebrow accent">AI assistant</p>
-          <h2>{title}</h2>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+            AI assistant
+          </p>
+          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-stone-900">
+            {title}
+          </h2>
         </div>
-        <span className="status-dot">● private context</span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-medium text-emerald-700">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          private context
+        </span>
       </div>
-      <div className="suggestions">
+
+      <div className="mb-5 flex flex-wrap gap-2">
         <button
           type="button"
+          className="rounded-full border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-medium text-stone-700 transition hover:border-orange-300 hover:text-orange-600"
           onClick={() =>
             setQuestion(
               owner
@@ -118,6 +187,7 @@ function ChatBox({ owner, repo, title = "Ask Atlas" }) {
         </button>
         <button
           type="button"
+          className="rounded-full border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-medium text-stone-700 transition hover:border-orange-300 hover:text-orange-600"
           onClick={() =>
             setQuestion(
               owner
@@ -129,25 +199,38 @@ function ChatBox({ owner, repo, title = "Ask Atlas" }) {
           Find the important parts
         </button>
       </div>
-      <label className="provider-control">
+
+      <label className="mb-5 flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.12em] text-stone-500">
         Provider
         <select
           value={providerChoice}
           onChange={(event) => setProviderChoice(event.target.value)}
+          className="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-[11px] font-medium text-stone-700 outline-none transition focus:border-orange-400"
         >
           <option value="">Automatic</option>
           <option value="groq">Groq</option>
           <option value="mistral">Mistral</option>
         </select>
       </label>
+
       {answer && (
-        <div className="chat-answer">
-          <span className="eyebrow">{provider} response</span>
-          <AnswerContent answer={answer} />
+        <div className="mb-5 rounded-2xl border border-orange-100 bg-orange-50/40 p-4">
+          <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+            {provider} response
+          </div>
+          <div className="space-y-3 text-sm leading-7 text-stone-700">
+            <AnswerContent answer={answer} />
+          </div>
         </div>
       )}
-      {error && <div className="notice error">{error}</div>}
-      <form className="chat-form" onSubmit={submit}>
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <form className="flex gap-3" onSubmit={submit}>
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
@@ -157,8 +240,13 @@ function ChatBox({ owner, repo, title = "Ask Atlas" }) {
               : "Ask about your GitHub profile..."
           }
           maxLength={4000}
+          className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 placeholder:text-stone-400 outline-none transition focus:border-orange-400 focus:bg-white"
         />
-        <button className="primary-button" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-[4px_4px_0_rgba(244,114,182,0.25)] transition hover:bg-stone-700 disabled:cursor-wait disabled:opacity-70"
+        >
           {loading ? "Thinking..." : "Ask"}
         </button>
       </form>
