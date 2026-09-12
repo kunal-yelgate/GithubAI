@@ -1,6 +1,7 @@
 import asyncio
 import httpx
 import base64
+from urllib.parse import quote
 
 GITHUB_API_URL = "https://api.github.com"
 
@@ -170,20 +171,35 @@ async def get_repository_tree(
         "X-GitHub-Api-Version": "2022-11-28"
     }
 
+    branches_to_try = [branch, "main", "master"]
+    seen = set()
+
     async with httpx.AsyncClient() as client:
+        for candidate in branches_to_try:
+            if not candidate or candidate in seen:
+                continue
+            seen.add(candidate)
 
-        response = await client.get(
-            f"{GITHUB_API_URL}/repos/"
-            f"{owner}/{repo}/git/trees/{branch}",
-            headers=headers,
-            params={
-                "recursive": "1"
-            }
-        )
+            encoded_candidate = quote(candidate, safe="")
 
-        response.raise_for_status()
+            try:
+                response = await client.get(
+                    f"{GITHUB_API_URL}/repos/"
+                    f"{owner}/{repo}/git/trees/{encoded_candidate}",
+                    headers=headers,
+                    params={
+                        "recursive": "1"
+                    }
+                )
 
-        return response.json()
+                if response.status_code == 404:
+                    continue
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPStatusError:
+                continue
+
+    return {"tree": []}
 
 async def get_repository_file(
     access_token: str,
