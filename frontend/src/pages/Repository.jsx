@@ -98,8 +98,9 @@ function Repository({ repository, onBack }) {
                 <strong>{analysis.architecture.backend || "Source"}</strong>
               </div>
               <p className="muted">
-                {analysis.architecture.analyzed_source_files || 0} source files ·{" "}
-                {analysis.architecture.module_relationships || 0} detected module relationships
+                {analysis.architecture.analyzed_source_files || 0} source files
+                · {analysis.architecture.module_relationships || 0} detected
+                module relationships
               </p>
               {analysis.architecture.entry_points?.length > 0 && (
                 <div className="source-list">
@@ -113,12 +114,14 @@ function Repository({ repository, onBack }) {
               )}
               {analysis.architecture.module_graph?.length > 0 && (
                 <div className="source-list">
-                  {analysis.architecture.module_graph.slice(0, 12).map((edge) => (
-                    <div key={`${edge.from}-${edge.to}-${edge.import}`}>
-                      <code>{edge.from}</code>
-                      <span>→ {edge.to}</span>
-                    </div>
-                  ))}
+                  {analysis.architecture.module_graph
+                    .slice(0, 12)
+                    .map((edge) => (
+                      <div key={`${edge.from}-${edge.to}-${edge.import}`}>
+                        <code>{edge.from}</code>
+                        <span>→ {edge.to}</span>
+                      </div>
+                    ))}
                 </div>
               )}
             </article>
@@ -146,6 +149,22 @@ function Repository({ repository, onBack }) {
                   ? "setup included"
                   : "no setup detected"}
               </p>
+            </article>
+            <article className="panel wide-panel">
+              <p className="eyebrow">Commit history</p>
+              <h2>{analysis.commits.total_analyzed} total commits</h2>
+              <div className="source-list">
+                {(analysis.commits.history || []).slice(0, 8).map((commit) => (
+                  <div key={commit.sha || `${commit.author}-${commit.date}`}>
+                    <code>{commit.message}</code>
+                    <span>
+                      {commit.author} ·{" "}
+                      {new Date(commit.date).toLocaleDateString()}
+                      {commit.date ? "" : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </article>
             <article className="panel wide-panel">
               <p className="eyebrow">Important files</p>
