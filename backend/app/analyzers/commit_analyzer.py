@@ -10,34 +10,39 @@ def analyze_commits(commits: list):
             "contributors": [],
             "commits_by_contributor": {},
             "first_commit": None,
-            "latest_commit": None
+            "latest_commit": None,
+            "history": []
         }
 
     contributor_counter = Counter()
-
     commit_dates = []
+    history = []
 
     for commit in commits:
+        author = commit.get("author") or {}
+        username = author.get("login") or commit.get("commit", {}).get("author", {}).get("name")
 
-        author = commit.get("author")
-
-        if author:
-            username = author.get("login")
-
-            if username:
-                contributor_counter[username] += 1
+        if username:
+            contributor_counter[username] += 1
 
         commit_info = commit.get("commit", {})
-        author_info = commit_info.get("author")
+        author_info = commit_info.get("author") or {}
+        committer_info = commit_info.get("committer") or {}
+        date = author_info.get("date") or committer_info.get("date")
+        if date:
+            commit_dates.append(date)
 
-        if author_info:
-
-            date = author_info.get("date")
-
-            if date:
-                commit_dates.append(date)
+        history.append({
+            "sha": commit.get("sha"),
+            "message": (commit_info.get("message") or "").strip().split("\n")[0],
+            "author": username or commit_info.get("author", {}).get("name") or "Unknown",
+            "date": date,
+            "url": commit.get("html_url") or commit.get("url"),
+            "committer": (committer_info.get("name") or "Unknown")
+        })
 
     commit_dates.sort()
+    history.sort(key=lambda item: item["date"] or "", reverse=True)
 
     return {
         "total_analyzed": len(commits),
@@ -65,5 +70,7 @@ def analyze_commits(commits: list):
             commit_dates[-1]
             if commit_dates
             else None
-        )
+        ),
+
+        "history": history
     }

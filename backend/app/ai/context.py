@@ -5,6 +5,8 @@ from app.database.repositories import list_cached_analyses
 
 SYSTEM_PROMPT = """You are GitHub Atlas, a precise repository intelligence assistant.
 Answer only from the supplied GitHub context. Never invent files, metrics, technologies, or code.
+Repository descriptions are weak evidence and are never enough by themselves to claim a stack or framework. To support a claim, use explicit evidence from the repository metadata, dependency lists, technology detection, README content, source file analysis, and retrieved code snippets.
+If the repository context does not show direct evidence, say that the repository does not provide enough evidence to confirm it.
 When citing evidence, use repository-relative file paths in backticks. Explain uncertainty when context is incomplete.
 For statistics and profile questions, calculate from the supplied structured data.
 For code questions, distinguish static-analysis findings from direct source excerpts.
@@ -51,7 +53,7 @@ def repository_context(analysis: dict, chunks: list[dict]):
                 "chunk_index": chunk["chunk_index"],
                 "content": chunk["content"][:2400]
             }
-            for chunk in chunks[:2]
+            for chunk in chunks[:4]
         ]
     }
 

@@ -40,7 +40,22 @@ async def logout():
 
 
 @router.get("/github/callback")
-async def github_callback(code: str):
+async def github_callback(
+    code: str | None = None,
+    error: str | None = None,
+    error_description: str | None = None,
+):
+    if error:
+        raise HTTPException(
+            status_code=400,
+            detail=(error_description or error or "GitHub authentication failed")
+        )
+
+    if not code:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing GitHub OAuth code"
+        )
 
     token_data = await exchange_code_for_token(code)
 
@@ -63,7 +78,8 @@ async def github_callback(code: str):
         value=session,
         httponly=True,
         secure=False,  # True in production HTTPS
-        samesite="lax"
+        samesite="lax",
+        path="/"
     )
 
     return response
