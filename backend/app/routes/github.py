@@ -73,11 +73,19 @@ async def analyze_repo(
 
     access_token = get_access_token(session)
 
-    result, cached = await analyze_repository_cached(
-        access_token,
-        owner,
-        repo
-    )
+    try:
+        result, cached = await analyze_repository_cached(
+            access_token,
+            owner,
+            repo
+        )
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GitHub repository analysis failed: {error}"
+        ) from error
 
     return {**result, "cached": cached}
 

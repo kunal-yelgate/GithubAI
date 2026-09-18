@@ -55,12 +55,29 @@ export async function getActivitySummary() {
 }
 
 export async function analyzeRepository(owner, repo) {
-  const response = await fetch(
-    `${API_URL}/github/repositories/${owner}/${repo}/analysis`,
-    { credentials: "include" }
-  );
+  let response;
+  try {
+    response = await fetch(
+      `${API_URL}/github/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/analysis`,
+      { credentials: "include" }
+    );
+  } catch {
+    throw new Error(
+      "Could not reach the backend. Make sure the API is running on port 8000."
+    );
+  }
 
-  if (!response.ok) throw new Error("Unable to analyze repository");
+  if (!response.ok) {
+    let message = "Unable to analyze repository";
+    try {
+      const errorData = await response.json();
+      if (errorData?.detail) message = errorData.detail;
+    } catch {
+      // Keep the fallback when the server does not return JSON.
+    }
+    throw new Error(message);
+  }
+
   return response.json();
 }
 
@@ -82,7 +99,16 @@ export async function askAI(question, scope = {}) {
     body: JSON.stringify({ question, ...scope })
   });
 
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.detail || "AI request failed");
+  let data = {};
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
+
+  if (!response.ok) {
+    throw new Error(data?.detail || "AI request failed");
+  }
+
   return data;
 }

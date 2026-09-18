@@ -46,24 +46,30 @@ async def analyze_repository(
         repo
     )
 
-    # Languages
-    language_data = await get_repository_languages(
-        access_token,
-        owner,
-        repo
-    )
-
-    language_analysis = analyze_languages(
-        language_data
-    )
+    try:
+        language_data = await get_repository_languages(
+            access_token,
+            owner,
+            repo
+        )
+        language_analysis = analyze_languages(language_data)
+    except Exception:
+        language_analysis = {
+            "primary_language": None,
+            "languages": {},
+            "total_bytes": 0
+        }
 
     # Commits
-    commits = await get_repository_commits(
-        access_token,
-        owner,
-        repo,
-        max_pages=10
-    )
+    try:
+        commits = await get_repository_commits(
+            access_token,
+            owner,
+            repo,
+            max_pages=10
+        )
+    except Exception:
+        commits = []
     
     commit_analysis = analyze_commits(
         commits
@@ -75,7 +81,7 @@ async def analyze_repository(
         access_token,
         owner,
         repo,
-        repository["default_branch"]
+        repository.get("default_branch") or "main"
     )
 
     structure_analysis = analyze_structure(tree)
@@ -100,13 +106,19 @@ async def analyze_repository(
             continue
 
         if path.endswith("package.json"):
-            package_analysis = analyze_package_json(content)
-            dependencies[path] = package_analysis["dependencies"]
-            technologies.extend(package_analysis["technologies"])
+            try:
+                package_analysis = analyze_package_json(content)
+                dependencies[path] = package_analysis["dependencies"]
+                technologies.extend(package_analysis["technologies"])
+            except Exception:
+                pass
         elif path.endswith("requirements.txt"):
-            requirements_analysis = analyze_requirements(content)
-            dependencies[path] = requirements_analysis["dependencies"]
-            technologies.extend(requirements_analysis["technologies"])
+            try:
+                requirements_analysis = analyze_requirements(content)
+                dependencies[path] = requirements_analysis["dependencies"]
+                technologies.extend(requirements_analysis["technologies"])
+            except Exception:
+                pass
 
         if path.rsplit(".", 1)[-1].lower() in {"py", "js", "jsx", "ts", "tsx"}:
             source_contents[path] = content
@@ -125,13 +137,13 @@ async def analyze_repository(
 
     return {
         "repository": {
-            "name": repository["name"],
-            "full_name": repository["full_name"],
-            "description": repository["description"],
-            "stars": repository["stargazers_count"],
-            "forks": repository["forks_count"],
-            "open_issues": repository["open_issues_count"],
-            "default_branch": repository["default_branch"]
+            "name": repository.get("name"),
+            "full_name": repository.get("full_name"),
+            "description": repository.get("description"),
+            "stars": repository.get("stargazers_count", 0),
+            "forks": repository.get("forks_count", 0),
+            "open_issues": repository.get("open_issues_count", 0),
+            "default_branch": repository.get("default_branch") or "main"
         },
 
         "languages": language_analysis,
