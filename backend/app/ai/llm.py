@@ -84,17 +84,29 @@ async def _request_provider(messages: list[dict], provider_name: str):
 
 async def ask_llm(messages: list[dict], provider: str | None = None):
     provider_name = (provider or AI_PROVIDER).lower()
+
     if provider_name == "grok" and GROK_API_KEY.startswith("gsk_"):
         provider_name = "groq"
+
     try:
         return await _request_provider(messages, provider_name)
-    except AIProviderError as error:
+    except Exception as error:
         error_text = str(error).lower()
-        if (
+        should_fallback_to_mistral = (
             provider is None
             and provider_name == "groq"
-            and ("context_length" in error_text or "rate_limit" in error_text)
             and MISTRAL_API_KEY
-        ):
+            and (
+                "context_length" in error_text
+                or "rate_limit" in error_text
+                or "unauthorized" in error_text
+                or "forbidden" in error_text
+                or "invalid" in error_text
+                or "authentication" in error_text
+                or "bad request" in error_text
+                or "not authorized" in error_text
+            )
+        )
+        if should_fallback_to_mistral:
             return await _request_provider(messages, "mistral")
         raise

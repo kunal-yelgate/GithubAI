@@ -92,12 +92,20 @@ export async function analyzeAllRepositories() {
 }
 
 export async function askAI(question, scope = {}) {
-  const response = await fetch(`${API_URL}/ai/chat`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, ...scope })
-  });
+  let response;
+
+  try {
+    response = await fetch(`${API_URL}/ai/chat`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, ...scope })
+    });
+  } catch (error) {
+    throw new Error(
+      "Unable to reach the backend AI API. Make sure the API server is running on http://localhost:8000."
+    );
+  }
 
   let data = {};
   try {
@@ -107,6 +115,14 @@ export async function askAI(question, scope = {}) {
   }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Your session has expired. Please log in again to use the AI assistant.");
+    }
+
+    if (response.status === 403) {
+      throw new Error("AI access is not allowed for this session.");
+    }
+
     throw new Error(data?.detail || "AI request failed");
   }
 
