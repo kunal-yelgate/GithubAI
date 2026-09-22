@@ -103,15 +103,16 @@ export async function askAI(question, scope = {}) {
     });
   } catch (error) {
     throw new Error(
-      "Unable to reach the backend AI API. Make sure the API server is running on http://localhost:8000."
+      "Unable to reach the backend AI API. Make sure the API server is running on http://localhost:8000.",
+      { cause: error }
     );
   }
 
-  let data = {};
+  let data;
   try {
     data = await response.json();
   } catch {
-    data = {};
+    data = undefined;
   }
 
   if (!response.ok) {
