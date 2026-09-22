@@ -28,17 +28,18 @@ class _PostgresCursorProxy:
 
 
 class _PostgresConnection:
-    def __init__(self, connection):
+    def __init__(self, connection, row_factory):
         self._connection = connection
+        self._row_factory = row_factory
 
     def execute(self, query, params=None):
-        cursor = self._connection.cursor(row_factory=None)
-        cursor.execute(query, params or ())
+        cursor = self._connection.cursor(row_factory=self._row_factory)
+        cursor.execute(query.replace("?", "%s"), params or ())
         return _PostgresCursorProxy(cursor)
 
     def executemany(self, query, params_seq):
         with self._connection.cursor() as cursor:
-            cursor.executemany(query, params_seq)
+            cursor.executemany(query.replace("?", "%s"), params_seq)
 
     def commit(self):
         self._connection.commit()
@@ -114,7 +115,7 @@ def get_connection():
                     """
                 )
             connection.commit()
-            return _PostgresConnection(connection)
+            return _PostgresConnection(connection, dict_row)
         except Exception:
             return _sqlite_connection()
 

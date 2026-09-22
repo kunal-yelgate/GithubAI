@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export async function signOut() {
   const response = await fetch(`${API_URL}/auth/logout`, {
@@ -55,12 +55,29 @@ export async function getActivitySummary() {
 }
 
 export async function analyzeRepository(owner, repo) {
-  const response = await fetch(
-    `${API_URL}/github/repositories/${owner}/${repo}/analysis`,
-    { credentials: "include" }
-  );
+  let response;
+  try {
+    response = await fetch(
+      `${API_URL}/github/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/analysis`,
+      { credentials: "include" }
+    );
+  } catch {
+    throw new Error(
+      "Could not reach the backend. Make sure the API is running on port 8000."
+    );
+  }
 
-  if (!response.ok) throw new Error("Unable to analyze repository");
+  if (!response.ok) {
+    let message = "Unable to analyze repository";
+    try {
+      const errorData = await response.json();
+      if (errorData?.detail) message = errorData.detail;
+    } catch {
+      // Keep the fallback when the server does not return JSON.
+    }
+    throw new Error(message);
+  }
+
   return response.json();
 }
 
@@ -75,14 +92,40 @@ export async function analyzeAllRepositories() {
 }
 
 export async function askAI(question, scope = {}) {
-  const response = await fetch(`${API_URL}/ai/chat`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, ...scope })
-  });
+  let response;
 
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.detail || "AI request failed");
+  try {
+    response = await fetch(`${API_URL}/ai/chat`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, ...scope })
+    });
+  } catch (error) {
+    throw new Error(
+      "Unable to reach the backend AI API. Make sure the API server is running on http://localhost:8000.",
+      { cause: error }
+    );
+  }
+
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    data = undefined;
+  }
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Your session has expired. Please log in again to use the AI assistant.");
+    }
+
+    if (response.status === 403) {
+      throw new Error("AI access is not allowed for this session.");
+    }
+
+    throw new Error(data?.detail || "AI request failed");
+  }
+
   return data;
 }

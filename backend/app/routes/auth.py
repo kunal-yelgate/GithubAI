@@ -11,6 +11,7 @@ from app.services.github_api import (
     get_github_user,
     get_user_repositories
 )
+from app.config import FRONTEND_URL
 
 
 router = APIRouter(
@@ -70,14 +71,14 @@ async def github_callback(
     session = create_session(access_token)
 
     response = RedirectResponse(
-        url="http://localhost:5173/dashboard"
+        url=f"{(FRONTEND_URL or 'http://localhost:5173').rstrip('/')}/dashboard"
     )
 
     response.set_cookie(
         key="session",
         value=session,
         httponly=True,
-        secure=False,  # True in production HTTPS
+        secure=(FRONTEND_URL or "").startswith("https://"),
         samesite="lax",
         path="/"
     )

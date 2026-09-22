@@ -5,22 +5,16 @@ import httpx
 from app.config import (
     AI_MODEL,
     AI_PROVIDER,
-    GROK_API_KEY,
     GROQ_API_KEY,
     MISTRAL_API_KEY
 )
 
 
 PROVIDERS = {
-    "grok": {
-        "url": "https://api.x.ai/v1/chat/completions",
-        "default_model": "grok-3-mini",
-        "key": GROK_API_KEY
-    },
     "groq": {
         "url": "https://api.groq.com/openai/v1/chat/completions",
         "default_model": "openai/gpt-oss-120b",
-        "key": GROQ_API_KEY or (GROK_API_KEY if GROK_API_KEY.startswith("gsk_") else "")
+        "key": GROQ_API_KEY
     },
     "mistral": {
         "url": "https://api.mistral.ai/v1/chat/completions",
@@ -84,17 +78,29 @@ async def _request_provider(messages: list[dict], provider_name: str):
 
 async def ask_llm(messages: list[dict], provider: str | None = None):
     provider_name = (provider or AI_PROVIDER).lower()
+
     if provider_name == "grok" and GROK_API_KEY.startswith("gsk_"):
         provider_name = "groq"
+
     try:
         return await _request_provider(messages, provider_name)
-    except AIProviderError as error:
+    except Exception as error:
         error_text = str(error).lower()
-        if (
+        should_fallback_to_mistral = (
             provider is None
             and provider_name == "groq"
-            and ("context_length" in error_text or "rate_limit" in error_text)
             and MISTRAL_API_KEY
-        ):
+            and (
+                "context_length" in error_text
+                or "rate_limit" in error_text
+                or "unauthorized" in error_text
+                or "forbidden" in error_text
+                or "invalid" in error_text
+                or "authentication" in error_text
+                or "bad request" in error_text
+                or "not authorized" in error_text
+            )
+        )
+        if should_fallback_to_mistral:
             return await _request_provider(messages, "mistral")
         raise

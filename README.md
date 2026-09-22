@@ -77,6 +77,30 @@ FastAPI's interactive documentation is available at:
 - `http://localhost:8000/docs`
 - `http://localhost:8000/redoc`
 
+## Deploying the Backend to Render
+
+The repository includes `render.yaml` for a Render Python web service. Create a new Blueprint from the repository, or configure a web service with:
+
+- **Root directory:** `backend`
+- **Build command:** `pip install -r requirements.txt`
+- **Start command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- **Health check path:** `/`
+
+Set these environment variables in Render:
+
+```env
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+GITHUB_REDIRECT_URI=https://your-backend.onrender.com/auth/github/callback
+FRONTEND_URL=https://your-frontend-host.example
+DATABASE_URL=your_postgres_connection_string
+GROQ_API_KEY=your_groq_api_key
+MISTRAL_API_KEY=your_mistral_api_key
+AI_PROVIDER=groq
+```
+
+For a deployed frontend, set `VITE_API_URL` to the Render backend URL before building. Update the GitHub OAuth App homepage and callback URLs to use the deployed frontend and backend URLs.
+
 ## Frontend Setup
 
 Open a second terminal from the repository root:
