@@ -5,22 +5,16 @@ import httpx
 from app.config import (
     AI_MODEL,
     AI_PROVIDER,
-    GROK_API_KEY,
     GROQ_API_KEY,
     MISTRAL_API_KEY
 )
 
 
 PROVIDERS = {
-    "grok": {
-        "url": "https://api.x.ai/v1/chat/completions",
-        "default_model": "grok-3-mini",
-        "key": GROK_API_KEY
-    },
     "groq": {
         "url": "https://api.groq.com/openai/v1/chat/completions",
         "default_model": "openai/gpt-oss-120b",
-        "key": GROQ_API_KEY or (GROK_API_KEY if GROK_API_KEY.startswith("gsk_") else "")
+        "key": GROQ_API_KEY
     },
     "mistral": {
         "url": "https://api.mistral.ai/v1/chat/completions",

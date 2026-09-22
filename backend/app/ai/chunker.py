@@ -1,8 +1,6 @@
 from pathlib import PurePosixPath
 
-
 SUPPORTED_EXTENSIONS = {"py", "js", "jsx", "ts", "tsx", "json", "md", "toml", "txt"}
-
 
 def chunk_file(path: str, content: str, max_chars: int = 3500):
     extension = PurePosixPath(path).suffix.lower().lstrip(".")
