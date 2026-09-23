@@ -1,53 +1,143 @@
 # GitHub AI Repo Intelligence
 
-A full-stack application that authenticates with GitHub, displays a user's repositories, and analyzes repository metadata, languages, structure, commits, and technologies.
+A full-stack GitHub repository intelligence platform that authenticates with GitHub, analyzes repository metadata, and surfaces AI-assisted insights about code structure, technologies, languages, and commit history.
 
-## Stack
+<p align="center">
+  <img alt="GitHub AI Repo Intelligence" src="https://img.shields.io/badge/Stack-FastAPI%20%2B%20React-blue" />
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB" />
+  <img alt="Node" src="https://img.shields.io/badge/Node.js-18%2B-339933" />
+  <img alt="License" src="https://img.shields.io/badge/License-Unspecified-lightgrey" />
+</p>
 
-- **Frontend:** React 19, Vite, JavaScript
-- **Backend:** FastAPI, Uvicorn, HTTPX
-- **Authentication:** GitHub OAuth with a signed session cookie
-- **GitHub API:** User profile, repositories, repository languages, commits, tree, and file contents
+## Overview
 
-## Project Structure
+This project combines a React frontend with a FastAPI backend to:
+
+- authenticate users through GitHub OAuth
+- load the user’s repositories and GitHub profile
+- analyze language usage, repository structure, and technology stacks
+- inspect commit and repository metadata
+- provide a clean dashboard for exploring project health and repository context
+
+It is designed to be a strong foundation for AI-powered repository analysis, developer tooling, and GitHub intelligence workflows.
+
+## Features
+
+- GitHub OAuth authentication
+- Repository listing and user profile retrieval
+- Repository structure and language analysis
+- Technology and architecture detection
+- Commit and repository metadata inspection
+- FastAPI backend with interactive API docs
+- React-based frontend with dashboard experience
+
+## Tech Stack
+
+- Frontend: React 19, Vite, JavaScript
+- Backend: FastAPI, Uvicorn, HTTPX
+- Authentication: GitHub OAuth + signed session cookies
+- Data sources: GitHub REST API and repository metadata endpoints
+- AI integrations: configurable provider support for Groq and Mistral
+
+## Repository Structure
 
 ```text
-backend/
-  app/
-    analyzers/       Repository language, structure, and technology analyzers
-    routes/          Authentication and GitHub API routes
-    services/        GitHub OAuth, API, and repository analysis services
-    config.py        Environment configuration
-    main.py          FastAPI application
-    session.py       Signed session cookie helpers
-  requirements.txt
-
-frontend/
-  src/
-    pages/           Login and dashboard screens
-    services/        Backend API client
-    App.jsx          Session bootstrap and page selection
-  package.json
-
-implementation/     Step-by-step implementation notes
+.
+├── backend/
+│   ├── app/
+│   │   ├── ai/
+│   │   │   ├── chunker.py
+│   │   │   ├── context.py
+│   │   │   ├── embeddings.py
+│   │   │   ├── llm.py
+│   │   │   ├── retrieval.py
+│   │   │   └── service.py
+│   │   ├── analyzers/
+│   │   │   ├── activity_analyzer.py
+│   │   │   ├── architecture_analyzer.py
+│   │   │   ├── commit_analyzer.py
+│   │   │   ├── file_detector.py
+│   │   │   ├── language_analyzer.py
+│   │   │   ├── readme_analyzer.py
+│   │   │   ├── source_analyzer.py
+│   │   │   ├── structure_analyzer.py
+│   │   │   └── technology_analyzer.py
+│   │   ├── database/
+│   │   │   ├── connection.py
+│   │   │   └── repositories.py
+│   │   ├── routes/
+│   │   │   ├── ai.py
+│   │   │   ├── auth.py
+│   │   │   └── github.py
+│   │   ├── services/
+│   │   │   ├── analysis_service.py
+│   │   │   ├── github_api.py
+│   │   │   ├── github_oauth.py
+│   │   │   └── repo_analyzer.py
+│   │   ├── config.py
+│   │   ├── main.py
+│   │   └── session.py
+│   ├── requirements.txt
+│   └── .env
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   │   └── ChatBox.jsx
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Login.jsx
+│   │   │   └── Repository.jsx
+│   │   ├── services/
+│   │   │   ├── api.js
+│   │   │   └── api.test.js
+│   │   ├── App.css
+│   │   ├── App.jsx
+│   │   ├── chat.css
+│   │   ├── cursor-theme.css
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── DESIGN.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package.json
+│   ├── README.md
+│   └── vite.config.js
+├── data/
+├── tests/
+│   ├── test_ai_response.py
+│   ├── test_auth_callback.py
+│   └── test_llm_provider_fallback.py
+├── render.yaml
+├── README.md
+├── skills-lock.json
+└── LICENSE
 ```
 
 ## Prerequisites
 
-- Python 3.10 or newer
-- Node.js 18 or newer
+Before running the app, make sure you have:
+
+- Python 3.10+
+- Node.js 18+
+- npm
 - A GitHub OAuth App
 
-## GitHub OAuth Setup
+## Quick Start
 
-Create an OAuth App in GitHub under **Settings > Developer settings > OAuth Apps**.
+### 1) Configure GitHub OAuth
 
-Use these local development values:
+Create a GitHub OAuth App in:
 
-- **Homepage URL:** `http://localhost:5173`
-- **Authorization callback URL:** `http://localhost:8000/auth/github/callback`
+- GitHub → Settings → Developer settings → OAuth Apps
 
-Create `backend/.env` with the following values:
+Use the following local development values:
+
+- Homepage URL: `http://localhost:5173`
+- Authorization callback URL: `http://localhost:8000/auth/github/callback`
+
+Then add your credentials in `backend/.env`:
 
 ```env
 GITHUB_CLIENT_ID=your_github_client_id
@@ -56,37 +146,55 @@ GITHUB_REDIRECT_URI=http://localhost:8000/auth/github/callback
 FRONTEND_URL=http://localhost:5173
 ```
 
-Do not commit `backend/.env` or expose the client secret.
+> Do not commit your `.env` file or expose the client secret in public repositories.
 
-## Backend Setup
+### 2) Start the backend
 
 From the repository root:
 
-```powershell
+```bash
 cd backend
 python -m venv .venv
+# Windows PowerShell
 .\.venv\Scripts\Activate.ps1
+# macOS/Linux
+# source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-The API is available at `http://localhost:8000`.
+The backend will be available at:
 
-FastAPI's interactive documentation is available at:
+- `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
-- `http://localhost:8000/docs`
-- `http://localhost:8000/redoc`
+### 3) Start the frontend
 
-## Deploying the Backend to Render
+Open a second terminal and run:
 
-The repository includes `render.yaml` for a Render Python web service. Create a new Blueprint from the repository, or configure a web service with:
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-- **Root directory:** `backend`
-- **Build command:** `pip install -r requirements.txt`
-- **Start command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- **Health check path:** `/`
+Then open:
 
-Set these environment variables in Render:
+- `http://localhost:5173`
+
+## Deployment
+
+This repository includes a Render deployment configuration via `render.yaml`.
+
+If you deploy the backend to Render, use these settings:
+
+- Root directory: `backend`
+- Build command: `pip install -r requirements.txt`
+- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- Health check path: `/`
+
+Recommended environment variables:
 
 ```env
 GITHUB_CLIENT_ID=your_github_client_id
@@ -99,77 +207,73 @@ MISTRAL_API_KEY=your_mistral_api_key
 AI_PROVIDER=groq
 ```
 
-For a deployed frontend, set `VITE_API_URL` to the Render backend URL before building. Update the GitHub OAuth App homepage and callback URLs to use the deployed frontend and backend URLs.
-
-## Frontend Setup
-
-Open a second terminal from the repository root:
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend is available at `http://localhost:5173`.
-
-Useful frontend commands:
-
-```powershell
-npm run build
-npm run lint
-npm run preview
-```
+Update the GitHub OAuth app configuration to match your production frontend and backend URLs.
 
 ## Authentication Flow
 
-1. Open `http://localhost:5173`.
-2. Select **Login with GitHub**.
-3. GitHub redirects to the backend callback.
-4. The backend exchanges the OAuth code for an access token.
-5. The backend creates a signed `session` cookie and redirects to the dashboard.
-6. The dashboard requests the authenticated GitHub user and repository list.
+1. User opens the frontend at `http://localhost:5173`
+2. User clicks the GitHub login button
+3. GitHub redirects to the backend callback endpoint
+4. The backend exchanges the OAuth code for an access token
+5. A signed session cookie is created
+6. The dashboard loads the authenticated user and repository data
 
 ## API Endpoints
 
 | Method | Endpoint                                       | Description                                   |
 | ------ | ---------------------------------------------- | --------------------------------------------- |
 | `GET`  | `/`                                            | API health response                           |
-| `GET`  | `/auth/github`                                 | Starts GitHub OAuth                           |
+| `GET`  | `/auth/github`                                 | Starts GitHub OAuth flow                      |
 | `GET`  | `/auth/github/callback`                        | Handles the OAuth callback                    |
 | `GET`  | `/github/me`                                   | Returns the authenticated GitHub user         |
-| `GET`  | `/github/repositories`                         | Returns the authenticated user's repositories |
-| `GET`  | `/github/repositories/{owner}/{repo}/analysis` | Analyzes a repository                         |
+| `GET`  | `/github/repositories`                         | Returns the authenticated user’s repositories |
+| `GET`  | `/github/repositories/{owner}/{repo}/analysis` | Analyzes a specific repository                |
 
-The GitHub data endpoints require the signed `session` cookie created during login.
+The GitHub data routes require the signed session cookie created during login.
 
-## Repository Analysis
+## Repository Analysis Capabilities
 
-The repository analysis endpoint currently returns:
+The analysis endpoint currently returns:
 
-- Repository metadata such as name, description, stars, forks, issues, and default branch
-- Language statistics
-- Repository structure, including files, directories, and extensions
-- Number of fetched commits
+- repository metadata such as name, description, stars, forks, issues, and default branch
+- language statistics
+- repository structure including files, folders, and extensions
+- commit counts and repository insights
 
-The analyzer uses the repository's actual default branch when requesting the Git tree.
+This data is gathered using the repository’s actual default branch when fetching the Git tree.
 
 ## Troubleshooting
 
-### The dashboard shows no data
+### Dashboard shows no data
 
-- Confirm both the backend and frontend are running.
-- Confirm the browser is using `http://localhost:5173`.
-- Confirm the GitHub OAuth callback URL exactly matches `GITHUB_REDIRECT_URI`.
-- Clear stale localhost cookies and log in again.
-- Check the browser network panel for failed requests to `/github/me` or `/github/repositories`.
+- confirm both the backend and frontend are running
+- verify you are using `http://localhost:5173`
+- confirm the GitHub callback URL matches `GITHUB_REDIRECT_URI`
+- clear stale localhost cookies and log in again
+- inspect browser network requests to `/github/me` and `/github/repositories`
 
 ### GitHub OAuth fails
 
-- Verify `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` in `backend/.env`.
-- Verify the callback URL in GitHub matches the backend environment variable exactly.
-- Restart Uvicorn after changing `.env` values.
+- verify `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` in `backend/.env`
+- confirm the callback URL in GitHub matches the backend environment variable exactly
+- restart Uvicorn after changing environment values
+
+## Contributing
+
+Contributions are welcome.
+
+If you want to contribute:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run the relevant checks
+5. Submit a pull request with a clear description
 
 ## License
 
-No license has been specified for this project yet.
+This project does not currently include a license file. If you intend to make it open source, add an appropriate license such as MIT or Apache 2.0 before publishing.
+
+## Support
+
+For questions, issues, or feature requests, open a GitHub issue in this repository.
