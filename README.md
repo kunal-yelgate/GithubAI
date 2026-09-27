@@ -187,27 +187,36 @@ Then open:
 
 This repository includes a Render deployment configuration via `render.yaml`.
 
-If you deploy the backend to Render, use these settings:
+The deployed frontend is `https://githubai-anly.vercel.app` and the backend is
+`https://githubai-backend.onrender.com`. The frontend defaults to this API URL
+in production; set `VITE_API_URL` in Vercel to override it.
+
+For Render, use these settings:
 
 - Root directory: `backend`
 - Build command: `pip install -r requirements.txt`
 - Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - Health check path: `/`
 
-Recommended environment variables:
+Set these Render environment variables (the non-secret URLs are also configured
+in `render.yaml`):
 
 ```env
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
-GITHUB_REDIRECT_URI=https://your-backend.onrender.com/auth/github/callback
-FRONTEND_URL=https://your-frontend-host.example
+GITHUB_REDIRECT_URI=https://githubai-backend.onrender.com/auth/github/callback
+FRONTEND_URL=https://githubai-anly.vercel.app
 DATABASE_URL=your_postgres_connection_string
 GROQ_API_KEY=your_groq_api_key
 MISTRAL_API_KEY=your_mistral_api_key
 AI_PROVIDER=groq
 ```
 
-Update the GitHub OAuth app configuration to match your production frontend and backend URLs.
+In the GitHub OAuth App settings, set the Homepage URL to
+`https://githubai-anly.vercel.app` and the Authorization callback URL to
+`https://githubai-backend.onrender.com/auth/github/callback`. Configure
+`VITE_API_URL=https://githubai-backend.onrender.com` in Vercel if you prefer an
+explicit production setting; redeploy both services after changing settings.
 
 ## Authentication Flow
 
