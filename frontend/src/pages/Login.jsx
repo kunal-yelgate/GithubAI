@@ -1,6 +1,8 @@
+import { API_URL } from "../services/api";
+
 function Login() {
   const handleLogin = () => {
-    window.location.href = "http://localhost:8000/auth/github";
+    window.location.href = `${API_URL}/auth/github`;
   };
 
   return (

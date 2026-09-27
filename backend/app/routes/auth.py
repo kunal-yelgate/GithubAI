@@ -13,6 +13,9 @@ from app.services.github_api import (
 )
 from app.config import FRONTEND_URL
 
+COOKIE_SECURE = (FRONTEND_URL or "").startswith("https://")
+COOKIE_SAMESITE = "none" if COOKIE_SECURE else "lax"
+
 
 router = APIRouter(
     prefix="/auth",
@@ -34,8 +37,9 @@ async def logout():
     response.delete_cookie(
         key="session",
         httponly=True,
-        secure=False,
-        samesite="lax"
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        path="/"
     )
     return response
 
@@ -78,8 +82,8 @@ async def github_callback(
         key="session",
         value=session,
         httponly=True,
-        secure=(FRONTEND_URL or "").startswith("https://"),
-        samesite="lax",
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
         path="/"
     )
 
