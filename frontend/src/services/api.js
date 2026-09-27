@@ -1,4 +1,9 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+export const API_URL = (
+  import.meta.env?.VITE_API_URL ||
+  (import.meta.env?.DEV
+    ? "http://localhost:8000"
+    : "https://githubai-backend.onrender.com")
+).replace(/\/$/, "");
 
 export async function signOut() {
   const response = await fetch(`${API_URL}/auth/logout`, {
@@ -63,7 +68,7 @@ export async function analyzeRepository(owner, repo) {
     );
   } catch {
     throw new Error(
-      "Could not reach the backend. Make sure the API is running on port 8000."
+      "Could not reach the backend. Check the API URL and try again."
     );
   }
 
@@ -101,17 +106,17 @@ export async function askAI(question, scope = {}) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question, ...scope })
     });
-  } catch (error) {
+  } catch {
     throw new Error(
-      "Unable to reach the backend AI API. Make sure the API server is running on http://localhost:8000."
+      "Unable to reach the backend AI API. Check the API URL and try again."
     );
   }
 
-  let data = {};
+  let data;
   try {
     data = await response.json();
   } catch {
-    data = {};
+    // Non-JSON error bodies use the fallback message below.
   }
 
   if (!response.ok) {

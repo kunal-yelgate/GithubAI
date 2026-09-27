@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 
 const originalFetch = global.fetch;
 
-const { askAI } = await import('./api.js');
+const { API_URL, askAI } = await import('./api.js');
+
+test('production API URL points to the deployed backend by default', () => {
+  assert.equal(API_URL, 'https://githubai-backend.onrender.com');
+});
 
 test('askAI surfaces backend error details when the error body is not JSON', async () => {
   global.fetch = async () => ({
