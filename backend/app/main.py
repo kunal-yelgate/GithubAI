@@ -12,13 +12,25 @@ app = FastAPI(
 )
 
 
+configured_origins = [
+    origin.strip().rstrip("/")
+    for origin in (FRONTEND_URL or "").split(",")
+    if origin.strip()
+]
+
+default_origins = [
+    "https://githubai-anly.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+]
+
+allowed_origins = list(dict.fromkeys(configured_origins + default_origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        origin.strip()
-        for origin in (FRONTEND_URL or "http://localhost:5173").split(",")
-        if origin.strip()
-    ],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

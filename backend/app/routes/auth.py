@@ -13,7 +13,15 @@ from app.services.github_api import (
 )
 from app.config import FRONTEND_URL
 
-COOKIE_SECURE = (FRONTEND_URL or "").startswith("https://")
+def get_primary_frontend_url() -> str:
+    if FRONTEND_URL:
+        origins = [o.strip() for o in FRONTEND_URL.split(",") if o.strip()]
+        if origins:
+            return origins[0].rstrip("/")
+    return "https://githubai-anly.vercel.app"
+
+
+COOKIE_SECURE = get_primary_frontend_url().startswith("https://")
 COOKIE_SAMESITE = "none" if COOKIE_SECURE else "lax"
 
 
@@ -74,8 +82,10 @@ async def github_callback(
 
     session = create_session(access_token)
 
+    target_frontend = get_primary_frontend_url()
+
     response = RedirectResponse(
-        url=f"{(FRONTEND_URL or 'http://localhost:5173').rstrip('/')}/dashboard"
+        url=f"{target_frontend}/dashboard"
     )
 
     response.set_cookie(
