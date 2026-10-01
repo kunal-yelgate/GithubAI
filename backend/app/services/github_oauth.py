@@ -1,4 +1,5 @@
 import httpx
+from urllib.parse import quote
 
 from app.config import (
     GITHUB_CLIENT_ID,
@@ -10,11 +11,11 @@ GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize"
 GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 
 def get_github_login_url():
-
+    encoded_redirect_uri = quote(GITHUB_REDIRECT_URI, safe="")
     return (
         f"{GITHUB_AUTHORIZE_URL}"
         f"?client_id={GITHUB_CLIENT_ID}"
-        f"&redirect_uri={GITHUB_REDIRECT_URI}"
+        f"&redirect_uri={encoded_redirect_uri}"
         f"&scope=read:user%20repo"
     )
 
