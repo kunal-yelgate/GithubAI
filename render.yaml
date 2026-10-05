@@ -12,7 +12,7 @@ services:
       - key: GITHUB_CLIENT_SECRET
         sync: false
       - key: GITHUB_REDIRECT_URI
-        value: https://githubai-backend.onrender.com/auth/github/callback
+        value: https://githubai-anly.vercel.app/api/auth/github/callback
       - key: FRONTEND_URL
         value: https://githubai-anly.vercel.app
       - key: DATABASE_URL

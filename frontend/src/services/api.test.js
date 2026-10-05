@@ -5,8 +5,8 @@ const originalFetch = global.fetch;
 
 const { API_URL, askAI } = await import('./api.js');
 
-test('production API URL points to the deployed backend by default', () => {
-  assert.equal(API_URL, 'https://githubai-backend.onrender.com');
+test('production API requests use the same-origin proxy by default', () => {
+  assert.equal(API_URL, '/api');
 });
 
 test('askAI surfaces backend error details when the error body is not JSON', async () => {

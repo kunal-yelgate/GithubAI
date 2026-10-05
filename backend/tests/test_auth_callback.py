@@ -24,13 +24,13 @@ def test_github_callback_requires_code(monkeypatch):
     assert response.json()["detail"] == "Missing GitHub OAuth code"
 
 
-def test_github_callback_sets_cross_site_secure_cookie(monkeypatch):
+def test_github_callback_sets_secure_same_site_cookie(monkeypatch):
     async def exchange_code(code):
         return {"access_token": "fake-token"}
 
     monkeypatch.setattr("app.routes.auth.FRONTEND_URL", "https://frontend.example")
     monkeypatch.setattr("app.routes.auth.COOKIE_SECURE", True)
-    monkeypatch.setattr("app.routes.auth.COOKIE_SAMESITE", "none")
+    monkeypatch.setattr("app.routes.auth.COOKIE_SAMESITE", "lax")
     monkeypatch.setattr("app.routes.auth.exchange_code_for_token", exchange_code)
     monkeypatch.setattr("app.routes.auth.create_session", lambda token: "signed-session")
 
@@ -40,7 +40,7 @@ def test_github_callback_sets_cross_site_secure_cookie(monkeypatch):
     assert response.headers["location"] == "https://frontend.example/dashboard"
     cookie = response.headers["set-cookie"].lower()
     assert "secure" in cookie
-    assert "samesite=none" in cookie
+    assert "samesite=lax" in cookie
 
 
 def test_analyze_commits_includes_history_and_authors():

@@ -22,7 +22,7 @@ def get_primary_frontend_url() -> str:
 
 
 COOKIE_SECURE = get_primary_frontend_url().startswith("https://")
-COOKIE_SAMESITE = "none" if COOKIE_SECURE else "lax"
+COOKIE_SAMESITE = "lax"
 
 
 router = APIRouter(

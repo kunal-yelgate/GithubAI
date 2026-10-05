@@ -1,9 +1,11 @@
-export const API_URL = (
-  import.meta.env?.VITE_API_URL ||
-  (import.meta.env?.DEV
-    ? "http://localhost:8000"
-    : "https://githubai-backend.onrender.com")
-).replace(/\/$/, "");
+const configuredApiUrl = import.meta.env?.VITE_API_URL?.trim();
+const apiUrl = import.meta.env?.DEV
+  ? configuredApiUrl || "http://localhost:8000"
+  : configuredApiUrl?.startsWith("/")
+    ? configuredApiUrl
+    : "/api";
+
+export const API_URL = apiUrl.replace(/\/$/, "");
 
 export async function signOut() {
   const response = await fetch(`${API_URL}/auth/logout`, {

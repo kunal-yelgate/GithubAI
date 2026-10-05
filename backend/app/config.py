@@ -9,7 +9,8 @@ DATABASE_URL = (os.getenv("DATABASE_URL") or os.getenv("NEON_DATABASE") or "").s
 GITHUB_CLIENT_ID = (os.getenv("GITHUB_CLIENT_ID") or "").strip()
 GITHUB_CLIENT_SECRET = (os.getenv("GITHUB_CLIENT_SECRET") or "").strip()
 GITHUB_REDIRECT_URI = (
-    os.getenv("GITHUB_REDIRECT_URI") or "https://githubai-backend.onrender.com/auth/github/callback"
+    os.getenv("GITHUB_REDIRECT_URI")
+    or "https://githubai-anly.vercel.app/api/auth/github/callback"
 ).strip()
 
 FRONTEND_URL = (

@@ -186,10 +186,11 @@ Then open:
 ## Deployment
 
 This repository includes a Render deployment configuration via `render.yaml`.
-
-The deployed frontend is `https://githubai-anly.vercel.app` and the backend is
-`https://githubai-backend.onrender.com`. The frontend defaults to this API URL
-in production; set `VITE_API_URL` in Vercel to override it.
+The frontend is deployed to Vercel from the `frontend` directory, and the
+backend is deployed to Render at `https://githubai-backend.onrender.com`.
+Production browser requests use the Vercel `/api` rewrite to reach Render. This
+keeps the session cookie first-party; do not set `VITE_API_URL` to the Render
+origin in Vercel.
 
 For Render, use these settings:
 
@@ -204,7 +205,7 @@ in `render.yaml`):
 ```env
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
-GITHUB_REDIRECT_URI=https://githubai-backend.onrender.com/auth/github/callback
+GITHUB_REDIRECT_URI=https://githubai-anly.vercel.app/api/auth/github/callback
 FRONTEND_URL=https://githubai-anly.vercel.app
 DATABASE_URL=your_postgres_connection_string
 GROQ_API_KEY=your_groq_api_key
@@ -214,17 +215,22 @@ AI_PROVIDER=groq
 
 In the GitHub OAuth App settings, set the Homepage URL to
 `https://githubai-anly.vercel.app` and the Authorization callback URL to
-`https://githubai-backend.onrender.com/auth/github/callback`. Configure
-`VITE_API_URL=https://githubai-backend.onrender.com` in Vercel if you prefer an
-explicit production setting; redeploy both services after changing settings.
+`https://githubai-anly.vercel.app/api/auth/github/callback` exactly. Set
+`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URI`, and
+`FRONTEND_URL` in Render. In Vercel, set the project's Root Directory to
+`frontend` and remove any `VITE_API_URL` value that points directly to Render.
+The frontend defaults to the same-origin `/api` route; if you set
+`VITE_API_URL`, use `/api`. Redeploy both services after changing settings.
 
 ## Authentication Flow
 
 1. User opens the frontend at `http://localhost:5173`
 2. User clicks the GitHub login button
-3. GitHub redirects to the backend callback endpoint
+3. GitHub redirects to the Vercel `/api/auth/github/callback` route, which
+   forwards the callback to Render
 4. The backend exchanges the OAuth code for an access token
-5. A signed session cookie is created
+5. A signed, secure, HTTP-only, same-site session cookie is created on the
+   frontend origin
 6. The dashboard loads the authenticated user and repository data
 
 ## API Endpoints
@@ -264,7 +270,10 @@ This data is gathered using the repository’s actual default branch when fetchi
 ### GitHub OAuth fails
 
 - verify `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` in `backend/.env`
-- confirm the callback URL in GitHub matches the backend environment variable exactly
+- confirm GitHub's callback URL and Render's `GITHUB_REDIRECT_URI` both equal
+  `https://githubai-anly.vercel.app/api/auth/github/callback`
+- remove a Vercel `VITE_API_URL` value that points directly to Render;
+  production browser requests must use `/api` so the session cookie is sent
 - restart Uvicorn after changing environment values
 
 ## Contributing
